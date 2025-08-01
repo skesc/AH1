@@ -41,24 +41,34 @@
 
 static inline uint32_t mix(uint32_t num)
 {
-
-#define L_CONST 0x3af1de9b
-#define R_CONST 0x13a7ce59
-  
-  /* Copied from Murmur3 */
-  num ^= num >> 16;
-  num *= L_CONST;
-  num ^= num >> 13;
-  num *= R_CONST;
-  num ^= num >> 16;
-
-#ifdef DEBUG
-  printf("[DEBUG] %" PRIu32 "\n", num);
+#if defined(__clang__)
+#define LROTATE32(n, s) (__builtin_rotateleft32(n, s))
+#define RROTATE32(n, s) (__builtin_rotateright32(n, s))
+#else
+#define LROTATE32(n, s) (((n << s) | (n >> (32 - s))) & UINT32_MAX)
+#define RROTATE32(n, s) (((n >> s) | (n << (32 - s))) & UINT32_MAX)
 #endif
 
+#define psi     0x28330d1b
+#define phi     0x483b86d5
+#define L_CONST 0x3af1de9b
+#define R_CONST 0x13a7ce59
+
+  /* Inspired by Murmur3 */
+  num *= phi;
+  num ^= LROTATE32(num, 11);
+  num ^= L_CONST * (num >> 13) + psi;
+  num *= RROTATE32(num,  7);
+  num ^= (R_CONST * num) << 17;
+
+#undef psi
+#undef phi
 #undef L_CONST
 #undef R_CONST
 
+#undef LROTATE32
+#undef RROTATE32
+  
   return num;
 }
 
