@@ -41,14 +41,6 @@
 
 static inline uint32_t mix(uint32_t num)
 {
-#if defined(__clang__)
-#define LROTATE32(n, s) (__builtin_rotateleft32(n, s))
-#define RROTATE32(n, s) (__builtin_rotateright32(n, s))
-#else
-#define LROTATE32(n, s) (((n << s) | (n >> (32 - s))) & UINT32_MAX)
-#define RROTATE32(n, s) (((n >> s) | (n << (32 - s))) & UINT32_MAX)
-#endif
-
 #define psi     0x28330d1b
 #define phi     0x483b86d5
 #define L_CONST 0x3af1de9b
@@ -66,9 +58,6 @@ static inline uint32_t mix(uint32_t num)
 #undef L_CONST
 #undef R_CONST
 
-#undef LROTATE32
-#undef RROTATE32
-  
   return num;
 }
 
