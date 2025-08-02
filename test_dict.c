@@ -89,29 +89,37 @@ int main(int argc, char **argv)
   }
   
   unsigned int lines = line_count(wordlist);
-  TestWord *tests = calloc(lines, sizeof(TestWord));
-  TestWord *test  = tests;
+  TestWord *tests = malloc(2 * lines * sizeof(TestWord));
+  if (!tests) {
+    perror("Could not allocate memory for all test cases.");
+    return -1;
+  }
 
-  for (size_t i = 0; i < lines; ++i) {
+  TestWord *test  = tests;
+  unsigned int collisions = 0;
+  for (unsigned int i = 0; i < lines; ++i) {
     test->word = get_word(wordlist);
     ah1(test->word, strlen(test->word), test->hash);
     uint32_t *h1 = test->hash;
     
-    // printf("TEST CASE #%d\n", i + 1);
-    // printf("  SUBJECT: %s", test->word);
-    // printf("  ");
-    // ah1_print(test->hash);
+#ifdef DEBUG
+    printf("TEST CASE #%d\n", i + 1);
+    printf("  SUBJECT: %s", test->word);
+    printf("  ");
+    ah1_print(test->hash);
+#endif
 
+    TestWord *match = tests;
     for (int j = 0; j < i; ++j) {
-      TestWord *match = tests;
       ah1(match->word, strlen(match->word), match->hash);
 
       uint32_t *h2 = match->hash;
 
-      // printf("  TARGET:  %s", match->word);
-      // printf("  ");
-      // ah1_print(match->hash);
-
+#ifdef DEBUG
+      printf("  TARGET:  %s", match->word);
+      printf("  ");
+      ah1_print(match->hash);
+#endif
 
       bool collides = ((h1[0] == h2[0]) & (h1[1] == h2[1]) & (h1[2] == h2[2]) & (h1[3] == h2[3]));
       if (collides) {
@@ -120,14 +128,16 @@ int main(int argc, char **argv)
         ah1_print(test->hash);
         printf("  %s", match->word);
         ah1_print(match->hash);
-        return 0;
+        collisions++;
       }
       match++;
     }
-
+    
+    printf("[%u/%u] Check finished for: %s", i+1, lines, test->word);
     test++;
   }
 
+  printf("Total collisions: %u/%u\n", collisions, lines);
   return 0;
 }
 

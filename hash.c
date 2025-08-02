@@ -11,10 +11,8 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,8 +33,8 @@
 #define LROTATE32(n, s) (__builtin_rotateleft32(n, s))
 #define RROTATE32(n, s) (__builtin_rotateright32(n, s))
 #else
-#define LROTATE32(n, s) (((n << s) | (n >> (32 - s))) & UINT32_MAX)
-#define RROTATE32(n, s) (((n >> s) | (n << (32 - s))) & UINT32_MAX)
+#define LROTATE32(n, s) (((n) << (s)) | ((n) >> (32 - (s))))
+#define RROTATE32(n, s) (((n) >> (s)) | ((n) << (32 - (s))))
 #endif
 
 static inline uint32_t mix(uint32_t num)
@@ -61,11 +59,6 @@ static inline uint32_t mix(uint32_t num)
   return num;
 }
 
-/*
- * The AH1 hash function. Intakes `size' bytes as `bytes' and a pointer
- * to the hash array. After a successful hash, it sets hash[4] to the
- * hash value of the passed data.
- */
 void ah1(void *restrict bytes, size_t size, uint32_t hash[4])
 {
   hash[0] = 0x5a44f074;
@@ -73,72 +66,65 @@ void ah1(void *restrict bytes, size_t size, uint32_t hash[4])
   hash[2] = 0x674f1845;
   hash[3] = 0x7fb5de7f;
 
-  uint32_t *blocks = bytes;
-  size_t total_blocks = size / sizeof(uint32_t);
-  size_t full_blocks  = total_blocks / 4;
-  size_t last_blocks  = total_blocks % 4;
-  
-  uint32_t chain[4] = { 0x8bca9b, 0x2413c9, 0x49f6dc3, 0x97b1 };
-  
-  for (size_t iter = 0; iter < full_blocks; ++iter) {
-    hash[0] &= mix(blocks[1] ^ chain[0]) + iter * blocks[3];
-    hash[1] ^= mix(blocks[0] - (chain[1] ^ hash[0]));
-    hash[2] += mix(blocks[3] ^ chain[2]) ^ hash[1];
-    hash[3] -= mix((blocks[2] + chain[3]) * hash[2]) ^ hash[1];
+  const uint8_t *data = (const uint8_t*)bytes;
+  const int nblocks = size / 4;
 
-    hash[0] += mix(hash[1]) * LROTATE32(hash[2], 7);
-    hash[1] += mix(hash[2]) * RROTATE32(hash[3], 11);
-    hash[2] ^= mix(hash[3]) * RROTATE32(hash[0], 9);
-    hash[3] ^= mix(hash[0]) * LROTATE32(hash[1], 5);
+  const uint32_t c1 = 0x21914047;
+  const uint32_t c2 = 0x1b873593;
+  const uint32_t c3 = 259336153;
+  const uint32_t c4 = 56011909;
 
-    chain[0] = hash[3];
-    chain[1] = hash[2];
-    chain[2] = hash[0];
-    chain[3] = hash[1];
-    
-    blocks += 4;
+  // --- Process 4-byte chunks ---
+  const uint32_t *blocks = (const uint32_t *)(data);
+  for (int i = 0; i < nblocks; i++) {
+    uint32_t in = blocks[i];
+   
+    in *= c1;
+    hash[i & 3] ^= c2 * RROTATE32(in, 7);
+    hash[i & 3] *= LROTATE32(hash[i & 3], 19);
+    hash[i & 3] += c3 * RROTATE32(hash[(i + 1) & 3], 3);
+    hash[i & 3] += hash[i & 3] + c1 * hash[(i + 2) & 3];
   }
 
-  uint32_t tail[4] = { 0 };
+  const uint8_t *tail = (const uint8_t*)(data + nblocks * 4);
+  uint32_t in = 0;
 
-  switch(size & 15) {
-    case 15: tail[3] |= (uint32_t)blocks[14] << 16;
-    case 14: tail[3] |= (uint32_t)blocks[13] << 8;
-    case 13: tail[3] |= (uint32_t)blocks[12] << 0;
-    case 12: tail[2] |= (uint32_t)blocks[11] << 24;
-    case 11: tail[2] |= (uint32_t)blocks[10] << 16;
-    case 10: tail[2] |= (uint32_t)blocks[9] << 8;
-    case 9:  tail[2] |= (uint32_t)blocks[8] << 0;
-    case 8:  tail[1] |= (uint32_t)blocks[7] << 24;
-    case 7:  tail[1] |= (uint32_t)blocks[6] << 16;
-    case 6:  tail[1] |= (uint32_t)blocks[5] << 8;
-    case 5:  tail[1] |= (uint32_t)blocks[4] << 0;
-    case 4:  tail[0] |= (uint32_t)blocks[3] << 24;
-    case 3:  tail[0] |= (uint32_t)blocks[2] << 16;
-    case 2:  tail[0] |= (uint32_t)blocks[1] << 8;
-    case 1:  tail[0] |= (uint32_t)blocks[0] << 0;
+  switch(size & 3)
+  {
+    case 3: in ^= (uint32_t)tail[2] << 16;
+    case 2: in ^= (uint32_t)tail[1] << 8;
+    case 1: in ^= (uint32_t)tail[0];
+            in *= c1; 
+            in = LROTATE32(in, 15) + c2; 
+            hash[nblocks % 4] ^= in;
   };
 
-  hash[0] &= mix(tail[1] ^ chain[0]) + full_blocks * tail[3];
-  hash[1] ^= mix(tail[0] - (chain[1] ^ hash[0]));
-  hash[2] += mix(hash[1] * chain[2]) ^ tail[3];
-  hash[3] -= mix((tail[2] + chain[3]) * hash[2]) ^ hash[1];
+  hash[0] ^= size;
+  hash[1] += size;
+  hash[2] -= size;
+  hash[3] += size;
 
-  hash[0] += mix(hash[1]) * LROTATE32(hash[2], 7);
-  hash[1] += mix(hash[2]) * RROTATE32(hash[3], 11);
-  hash[2] ^= mix(hash[3]) * RROTATE32(hash[0], 9);
-  hash[3] ^= mix(hash[0]) * LROTATE32(hash[1], 5);
-  
+  hash[0] += hash[1]; hash[0] -= hash[2]; hash[0] ^= hash[3];
+  hash[1] -= hash[0];
+  hash[2] ^= hash[0];
+  hash[3] += hash[0];
+
+  hash[0] = mix(hash[3]);
+  hash[1] = mix(hash[1]);
+  hash[2] = mix(hash[0]);
+  hash[3] = mix(hash[2]);
+
 #undef LROTATE32
 #undef RROTATE32
-
 }
 
+/*
+ * Prints the 128-bit hash in a hexadecimal format.
+ */
 void ah1_print(uint32_t hash[4])
 {
   for (uint8_t i = 0; i < 4; ++i) {
     printf("%08x", hash[i]);
   }
-  
   printf("\n");
 }
