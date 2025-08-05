@@ -25,6 +25,8 @@
  * THE SOFTWARE.
  */
 
+#include <AH1.h>
+
 #include <time.h>
 #include <math.h>
 #include <stdio.h>

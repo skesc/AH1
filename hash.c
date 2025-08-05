@@ -127,7 +127,7 @@ static inline uint32_t mix(uint32_t num)
   return num;
 }
 
-void ah1(const char *restrict bytes, size_t size, uint32_t hash[4])
+void AH1Hash(const char *restrict bytes, size_t size, uint32_t hash[4])
 {
   uint32_t w = 0x5a44f074;
   uint32_t x = 0x35e820f6;

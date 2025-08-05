@@ -26,7 +26,7 @@
  * THE SOFTWARE.
  */
 
-#include "hash.h"
+#include <AH1.h>
 
 #include <stdio.h>
 #include <stdint.h>

@@ -29,7 +29,7 @@
 #include <stdlib.h>
 
 /* Sets `hash' to a 128-bit hash for `size' bytes of `bytes' */
-void ah1(const char *restrict bytes, size_t size, uint32_t hash[4]);
+void AH1Hash(const char *restrict bytes, size_t size, uint32_t hash[4]);
 
 #endif /* __AH1_H__ */
 

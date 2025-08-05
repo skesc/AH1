@@ -6,6 +6,15 @@ million words with zero collisions detected. This makes it a suitable
 hash function for normal use cases (such as in calculating digests and
 in hash tables).
 
-INSTALLATION
-  
+**Installation**
+```bash
+sudo make
+```
+
+To use the function, include `AH1.h` in your source file. It's
+installed in your user include directory. For example usage, see
+`test_dict.c` and `repl.c`.
+
+The alpha version for testers is out now. Later versions to include a
+256-bit hash function, too.
 
