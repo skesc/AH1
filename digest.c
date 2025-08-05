@@ -1,6 +1,6 @@
-/* -- repl.c
- * A REPL to compute hashes of strings.
- *
+/* -- digest.c
+ * Generates AH1 digest of files.
+ * 
  * MIT License
  * 
  * Copyright (c) 2025 Abhigyan <nourr@duck.com>
@@ -24,38 +24,67 @@
  * THE SOFTWARE.
  */
 
-#include <AH1.h>
+#include "hash.h"
 
 #include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
 
-#define BUFF_SIZE 2048
-
-void ah1_print(uint32_t hash[4])
-{
-  for (uint8_t i = 0; i < 4; ++i) {
-    printf("%08x", hash[i]);
-  }
-  printf("\n");
-}
-
 int main(int argc, char **argv)
 {
-  uint32_t hash[4];
-  char buff[BUFF_SIZE] = { 0 };
-
-  printf(">> ");
-  while (fgets(buff, BUFF_SIZE, stdin)) {
-    ah1(buff, strlen(buff), hash);
-    ah1_print(hash);
-    printf(">> ");
+  if (argc < 2) {
+    printf("input file required.");
+    return EXIT_FAILURE;
   }
 
+  uint32_t hash[4];
+  
+  int fd = open(argv[1], O_RDONLY);
+  if(!fd) {
+    perror("file i/o: cannot open file.");
+    return -1;
+  }
+
+  struct stat file_stats;
+  if (fstat(fd, &file_stats) == -1) {
+    perror("file i/o: cannot read file size.");
+    close(fd);
+    return EXIT_FAILURE;
+  }
+
+  size_t file_size = file_stats.st_size;
+  if (!file_size) {
+    perror("file i/o: file is empty.");
+    close(fd);
+    return EXIT_SUCCESS;
+  }
+
+  char *restrict map = mmap(NULL, file_size, PROT_READ, MAP_PRIVATE, fd, 0);
+
+  if (map == MAP_FAILED) {
+    perror("file i/o: unable to map file.");
+    close(fd);
+    return EXIT_FAILURE;
+  }
+  
+  ah1(map, file_size, hash);
+
+  ah1_print(hash);
+
+  if (munmap(map, file_size) == -1) {
+    perror("file i/o: cannot unmap file from memory.");
+    return EXIT_FAILURE;
+  }
+
+  close(fd);
+  
   return EXIT_SUCCESS;
 }
 

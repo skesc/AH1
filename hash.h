@@ -1,5 +1,5 @@
-/* -- repl.c
- * A REPL to compute hashes of strings.
+/* -- hash.h
+ * Header file for functions related AH1 hashing algorithm.
  *
  * MIT License
  * 
@@ -11,10 +11,8 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,38 +22,14 @@
  * THE SOFTWARE.
  */
 
-#include <AH1.h>
+#ifndef __AH1_H__
+#define __AH1_H__
 
-#include <stdio.h>
 #include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
+#include <stdlib.h>
 
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
+/* Sets `hash' to a 128-bit hash for `size' bytes of `bytes' */
+void ah1(const char *restrict bytes, size_t size, uint32_t hash[4]);
 
-#define BUFF_SIZE 2048
-
-void ah1_print(uint32_t hash[4])
-{
-  for (uint8_t i = 0; i < 4; ++i) {
-    printf("%08x", hash[i]);
-  }
-  printf("\n");
-}
-
-int main(int argc, char **argv)
-{
-  uint32_t hash[4];
-  char buff[BUFF_SIZE] = { 0 };
-
-  printf(">> ");
-  while (fgets(buff, BUFF_SIZE, stdin)) {
-    ah1(buff, strlen(buff), hash);
-    ah1_print(hash);
-    printf(">> ");
-  }
-
-  return EXIT_SUCCESS;
-}
+#endif /* __AH1_H__ */
 

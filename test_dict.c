@@ -26,6 +26,8 @@
  * THE SOFTWARE.
  */
 
+#include "hash.h"
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -35,14 +37,19 @@
 /* define max reading limits */
 #define MAX_LINE_LENGTH 1024
 
-extern void ah1(void *restrict bytes, size_t size, uint32_t hash[4]);
-extern void ah1_print(uint32_t hash[4]);
-
 typedef struct TestWord
 {
   char *word;
   uint32_t hash[4];
 } TestWord;
+
+void ah1_print(uint32_t hash[4])
+{
+  for (uint8_t i = 0; i < 4; ++i) {
+    printf("%08x", hash[i]);
+  }
+  printf("\n");
+}
 
 char *get_word(FILE *file)
 {
@@ -89,7 +96,7 @@ int main(int argc, char **argv)
   }
   
   unsigned int lines = line_count(wordlist);
-  TestWord *tests = malloc(2 * lines * sizeof(TestWord));
+  TestWord *tests = malloc(lines * sizeof(TestWord));
   if (!tests) {
     perror("Could not allocate memory for all test cases.");
     return -1;
@@ -111,7 +118,7 @@ int main(int argc, char **argv)
 
     TestWord *match = tests;
     for (int j = 0; j < i; ++j) {
-      ah1(match->word, strlen(match->word), match->hash);
+      ah1(match->word, strlen(match->word) - 1, match->hash);
 
       uint32_t *h2 = match->hash;
 
@@ -121,7 +128,7 @@ int main(int argc, char **argv)
       ah1_print(match->hash);
 #endif
 
-      bool collides = ((h1[0] == h2[0]) & (h1[1] == h2[1]) & (h1[2] == h2[2]) & (h1[3] == h2[3]));
+      bool collides = ((h1[0] == h2[0]) && (h1[1] == h2[1]) && (h1[2] == h2[2]) && (h1[3] == h2[3]));
       if (collides) {
         printf("MATCH FOUND\n");
         printf("  %s", test->word);
@@ -136,9 +143,9 @@ int main(int argc, char **argv)
     printf("[%u/%u] Check finished for: %s", i+1, lines, test->word);
     test++;
   }
-
+  
+  fclose(wordlist);
   printf("Total collisions: %u/%u\n", collisions, lines);
   return 0;
 }
-
 
