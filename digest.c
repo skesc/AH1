@@ -24,7 +24,7 @@
  * THE SOFTWARE.
  */
 
-#include "hash.h"
+#include <hash.h>
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -36,6 +36,14 @@
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
+
+void ah1_print(uint32_t hash[4])
+{
+  for (uint8_t i = 0; i < 4; ++i) {
+    printf("%08x", hash[i]);
+  }
+  printf("\n");
+}
 
 int main(int argc, char **argv)
 {
@@ -74,7 +82,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
   
-  ah1(map, file_size, hash);
+  AH1Hash(map, file_size, hash);
 
   ah1_print(hash);
 
