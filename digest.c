@@ -24,12 +24,11 @@
  * THE SOFTWARE.
  */
 
-#include <hash.h>
+#include <AH1.h>
 
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <errno.h>
 #include <inttypes.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -39,8 +38,18 @@
 
 void ah1_print(uint32_t hash[4])
 {
-  for (uint8_t i = 0; i < 4; ++i) {
-    printf("%08x", hash[i]);
+  printf("ah128: ");
+  for (int i = 0; i < 4; ++i) {
+    printf("%" PRIx32, hash[i]);
+  }
+  printf("\n");
+}
+
+void ah2_print(uint64_t hash[4])
+{
+  printf("ah256: ");
+  for (int i = 0; i < 4; ++i) {
+    printf("%" PRIx64, hash[i]);
   }
   printf("\n");
 }
@@ -48,12 +57,12 @@ void ah1_print(uint32_t hash[4])
 int main(int argc, char **argv)
 {
   if (argc < 2) {
-    printf("input file required.");
+    printf("input file required.\n");
     return EXIT_FAILURE;
   }
 
-  uint32_t hash[4];
-  
+  uint32_t hash128[4];
+  uint64_t hash256[4];
   int fd = open(argv[1], O_RDONLY);
   if(!fd) {
     perror("file i/o: cannot open file.");
@@ -82,9 +91,11 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
   
-  AH1Hash(map, file_size, hash);
+  AH1Hash(map, file_size, hash128);
+  AH2Hash(map, file_size, hash256);
 
-  ah1_print(hash);
+  ah1_print(hash128);
+  ah2_print(hash256);
 
   if (munmap(map, file_size) == -1) {
     perror("file i/o: cannot unmap file from memory.");

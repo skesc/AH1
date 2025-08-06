@@ -26,6 +26,7 @@
  * THE SOFTWARE.
  */
 
+#include "hash.h"
 #include <AH1.h>
 
 #include <stdio.h>
@@ -106,10 +107,10 @@ int main(int argc, char **argv)
   unsigned int collisions = 0;
   for (unsigned int i = 0; i < lines; ++i) {
     test->word = get_word(wordlist);
-    ah1(test->word, strlen(test->word), test->hash);
+    AH1Hash(test->word, strlen(test->word), test->hash);
     uint32_t *h1 = test->hash;
     
-#ifdef DEBUG
+#ifdef __AH1_DEBUG__
     printf("TEST CASE #%d\n", i + 1);
     printf("  SUBJECT: %s", test->word);
     printf("  ");
@@ -118,11 +119,11 @@ int main(int argc, char **argv)
 
     TestWord *match = tests;
     for (int j = 0; j < i; ++j) {
-      ah1(match->word, strlen(match->word) - 1, match->hash);
+      AH1Hash(match->word, strlen(match->word) - 1, match->hash);
 
       uint32_t *h2 = match->hash;
 
-#ifdef DEBUG
+#ifdef __AH1_DEBUG__
       printf("  TARGET:  %s", match->word);
       printf("  ");
       ah1_print(match->hash);

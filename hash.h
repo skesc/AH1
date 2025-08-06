@@ -28,8 +28,26 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-/* Sets `hash' to a 128-bit hash for `size' bytes of `bytes' */
-void AH1Hash(const char *restrict bytes, size_t size, uint32_t hash[4]);
+/*
+ * A 128-bit non-cryptographic hash function for use in hash tables
+ * and calculating message digests.
+ *
+ * @param bytes the bytes to read for hashing
+ * @param size  number of bytes to read
+ * @param hash  an array of minimum size four, set to the hash value.
+ */
+void AH1Hash(const char *bytes, size_t size, uint32_t hash[4]);
+
+/*
+ * A 256-bit variant of AH1Hash. Implements the same method of
+ * computation for two of its registers. The other two registers have
+ * their own procedure.
+ *
+ * @param bytes the block of data to hash.
+ * @param size  length of data to read for hashing.
+ * @param hash  an array of minimum size four, set to the hash value.
+ */
+void AH2Hash(const char *bytes, size_t size, uint64_t hash[4]);
 
 #endif /* __AH1_H__ */
 

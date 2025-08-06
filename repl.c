@@ -27,9 +27,9 @@
 #include <AH1.h>
 
 #include <stdio.h>
-#include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
@@ -38,21 +38,36 @@
 
 void ah1_print(uint32_t hash[4])
 {
-  for (uint8_t i = 0; i < 4; ++i) {
-    printf("%08x", hash[i]);
+  printf("ah128: ");
+  for (int i = 0; i < 4; ++i) {
+    printf("%" PRIx32, hash[i]);
+  }
+  printf("\n");
+}
+
+void ah2_print(uint64_t hash[4])
+{
+  printf("ah256: ");
+  for (int i = 0; i < 4; ++i) {
+    printf("%" PRIx64, hash[i]);
   }
   printf("\n");
 }
 
 int main(int argc, char **argv)
 {
-  uint32_t hash[4];
+  uint32_t hash32[4];
+  uint64_t hash64[4];
   char buff[BUFF_SIZE] = { 0 };
 
   printf(">> ");
   while (fgets(buff, BUFF_SIZE, stdin)) {
-    ah1(buff, strlen(buff), hash);
-    ah1_print(hash);
+
+    AH1Hash(buff, strlen(buff), hash32);
+    AH2Hash(buff, strlen(buff), hash64);
+
+    ah1_print(hash32);
+    ah2_print(hash64);
     printf(">> ");
   }
 
