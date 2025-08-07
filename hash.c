@@ -78,12 +78,7 @@
 #define uint64_in_expected_order(x) (x)
 #endif
 
-#define swap(a, b)            \
-{                             \
-  *a ^= *b;                   \
-  *b ^= *a;                   \
-  *a ^= *b;                   \
-}                             \
+#define swap(a, b) *a ^= *b; *b ^= *a; *a ^= *b
 
 #define PERMUTE3(a, b, c) do { swap(&a, &b); swap(&a, &c); } while (0)
 
@@ -117,8 +112,7 @@ static inline uint64_t fetch64(const char *p)
 
 /* to debug mix function via test_mix.c */
 #ifdef __AH1_DEBUG__
-#define
-inline uint32_t mix(uint32_t num)
+uint32_t mix32(uint32_t num)
 #else
 static inline uint32_t mix32(uint32_t num)
 #endif /* __AH1_DEBUG__ */
@@ -145,8 +139,7 @@ static inline uint32_t mix32(uint32_t num)
 
 /* to debug mix function via test_mix.c */
 #ifdef __AH1_DEBUG__
-#define
-inline uint32_t mix(uint32_t num)
+uint64_t mix64(uint64_t num)
 #else
 static inline uint64_t mix64(uint64_t num)
 #endif /* __AH1_DEBUG__ */
@@ -193,7 +186,7 @@ void AH1Hash(const char *restrict bytes, size_t size, uint32_t hash[4])
     memcpy(temp, bytes, size);
 
     w ^= RROTATE32(fetch32(temp), 7) * c2 +  size;
-    x *= LROTATE32(fetch32(temp + 4), 19) + w;
+    x += LROTATE32(fetch32(temp + 4), 19) * c1 + w;
     y += RROTATE32(fetch32(temp + 8), 3) * c3 + x * y;
     z ^= RROTATE32(fetch32(temp + 12), 11) * y + c4 * w;
     PERMUTE3(w, y, z);
@@ -203,7 +196,7 @@ void AH1Hash(const char *restrict bytes, size_t size, uint32_t hash[4])
     /* hash the last 16 bytes first */
     const char *terminal = bytes + size - 16;
     w ^= RROTATE32(fetch32(terminal), 7) * c2 + size;
-    x *= LROTATE32(fetch32(terminal+4), 19) + w;
+    x += LROTATE32(fetch32(terminal+4), 19) * c1 + w;
     y += RROTATE32(fetch32(terminal+8), 3) * c3 + x * y;
     z ^= RROTATE32(fetch32(terminal+12), 11) * y + c4 * w;
     PERMUTE3(w, y, z);
@@ -213,7 +206,7 @@ void AH1Hash(const char *restrict bytes, size_t size, uint32_t hash[4])
     size = (size - 1) & ~(size_t) 15;
     while (size > 0) {
       w ^= RROTATE32(fetch32(bytes), 7) * c2 + size;
-      x *= LROTATE32(fetch32(bytes+4), 19) + w;
+      x += LROTATE32(fetch32(bytes+4), 19) * c1 + w;
       y += RROTATE32(fetch32(bytes+8), 3) * c3 + x * y;
       z ^= RROTATE32(fetch32(bytes+12), 11) * y + c4 * w;
       PERMUTE3(w, y, z);
@@ -259,12 +252,12 @@ void AH2Hash(const char *restrict bytes, size_t size, uint64_t hash[4])
 
     /* operate on 32-bit registers, simulating AH1Hash behavior */
     w1 ^= RROTATE32(fetch32(temp), 7) * c2 +  size;
-    w2 *= LROTATE32(fetch32(temp+4), 19) + w1;
+    w2 += LROTATE32(fetch32(temp+4), 19) * c1 + w1;
     x1 += RROTATE32(fetch32(temp+8), 3) * c3 + w2 * x1;
     x2 ^= RROTATE32(fetch32(temp+12), 11) * y + c4 * w1;
 
     y ^= RROTATE64(fetch64(temp+16), 61) * d1 + w1 * x1;
-    z *= RROTATE64(fetch64(temp+24), 13) * d2 + w2 * x2;
+    z ^= RROTATE64(fetch64(temp+24), 13) * d2 + w2 * x2;
     swap(&y, &z);
 
   } else {
@@ -272,24 +265,24 @@ void AH2Hash(const char *restrict bytes, size_t size, uint64_t hash[4])
     const char *terminal = bytes + size - 32;
     /* operate on 32-bit registers, simulating AH1Hash behavior */
     w1 ^= RROTATE32(fetch32(terminal), 7) * c2 +  size;
-    w2 *= LROTATE32(fetch32(terminal+4), 19) + w1;
+    w2 += LROTATE32(fetch32(terminal+4), 19) * c1 + w1;
     x1 += RROTATE32(fetch32(terminal+8), 3) * c3 + w2 * x1;
     x2 ^= RROTATE32(fetch32(terminal+12), 11) * y + c4 * w1;
 
     y ^= RROTATE64(fetch64(terminal+16), 61) * d1 + w1 * x1;
-    z *= RROTATE64(fetch64(terminal+24), 13) * d2 + w2 * x2;
+    z ^= RROTATE64(fetch64(terminal+24), 13) * d2 + w2 * x2;
     swap(&y, &z);
 
     size = (size - 1) & ~(size_t) 31;
     while (size > 0) {
       /* operate on 32-bit registers, simulating AH1Hash behavior */
       w1 ^= RROTATE32(fetch32(bytes), 7) * c2 +  size;
-      w2 *= LROTATE32(fetch32(bytes+4), 19) + w1;
+      w2 += LROTATE32(fetch32(bytes+4), 19) * c1 + w1;
       x1 += RROTATE32(fetch32(bytes+8), 3) * c3 + w2 * x1;
       x2 ^= RROTATE32(fetch32(bytes+12), 11) * y + c4 * w1;
 
       y ^= RROTATE64(fetch64(bytes+16), 61) * d1 + w1 * x1;
-      z *= RROTATE64(fetch64(bytes+24), 13) * d2 + w2 * x2;
+      z ^= RROTATE64(fetch64(bytes+24), 13) * d2 + w2 * x2;
       swap(&y, &z);
 
       bytes += 32;

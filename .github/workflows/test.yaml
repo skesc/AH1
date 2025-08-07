@@ -1,0 +1,15 @@
+name: Hash Function Quality Test
+run-name: Hash Function Quality Test
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compliation
+        run: sudo make
+      - name: Test
+        run: |
+          make tests
