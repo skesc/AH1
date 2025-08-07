@@ -1,2 +1,6 @@
 # Emacs files
 *~
+
+# Binaries
+out/
+bin/

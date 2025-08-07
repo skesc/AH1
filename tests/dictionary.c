@@ -168,12 +168,12 @@ int main(int argc, char **argv)
       match++;
     }
     
-    printf("[%u/%u] Check finished for: %s", i+1, lines, test->word);
+    printf("[%s %u/%u] Check finished for: %s", argv[1], i+1, lines, test->word);
     test++;
   }
   
   fclose(wordlist);
-  printf("Total collisions: %u/%u\n", collisions, lines);
+  printf("[%s]Total collisions: %u/%u\n", argv[1], collisions, lines);
   assert(!collisions && "TEST FAILED: COLLISION DETECTED.");
   return 0;
 }
