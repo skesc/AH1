@@ -1,5 +1,5 @@
-name: Hash Function Quality Test
-run-name: Hash Function Quality Test
+name: collision test
+run-name: collision test
 
 on: [push]
 
