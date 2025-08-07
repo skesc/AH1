@@ -147,7 +147,7 @@ int main(int argc, char **argv)
 
       bool collides = ((h128_1[0] == h128_2[0]) && (h128_1[1] == h128_2[1]) && (h128_1[2] == h128_2[2]) && (h128_1[3] == h128_2[3]));
       if (collides) {
-        printf("MATCH FOUND FOR 128-BIT HASH\n");
+        printf("[%s] MATCH FOUND FOR 128-BIT HASH\n", argv[1]);
         printf("  %s", test->word);
         ah1_print(test->hash128);
         printf("  %s", match->word);
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 
       collides = ((h256_1[0] == h256_2[0]) && (h256_1[1] == h256_2[1]) && (h256_1[2] == h256_2[2]) && (h256_1[3] == h256_2[3]));
       if (collides) {
-        printf("MATCH FOUND FOR 256-BIT HASH\n");
+        printf("[%s] MATCH FOUND FOR 256-BIT HASH\n", argv[1]);
         printf("  %s", test->word);
         ah2_print(test->hash256);
         printf("  %s", match->word);
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
       match++;
     }
     
-    printf("[%s %u/%u] Check finished for: %s", argv[1], i+1, lines, test->word);
+    /* printf("[%s %u/%u] Check finished for: %s", argv[1], i+1, lines, test->word); */
     test++;
   }
   
