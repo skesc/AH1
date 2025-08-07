@@ -1,5 +1,4 @@
 [![collision test](https://github.com/skesc/ah1/actions/workflows/test.yaml/badge.svg)](https://github.com/skesc/ah1/actions/workflows/test.yaml)
-![C](https://img.shields.io/badge/c-%2300599C.svg?style=for-the-badge&logo=c&logoColor=white)
 
 AH1 is a 128-bit non-cryptographic hashing algorithm. Its mixing
 function has a good Hamming distance score of 16 bits for 32-bit inputs,
