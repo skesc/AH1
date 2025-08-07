@@ -5,9 +5,14 @@ TESTCASES = dictionaries
 CFLAGS = -Wall -Werror -pedantic -O3
 
 all: install
-.PHONY: clean test test_top10k test_http_routes test_one_million
+.PHONY: clean test 
 
-tests: test_mix test_top10k test_http_routes test_one_million
+repl: $(TEST)/repl.c
+	mkdir -p $(OUT)
+	$(CC) -lAH1 $(CFLAGS) -o $(OUT)/$@ $^
+	@echo "REPL generated in" $(OUT) "folder."
+
+tests: test_mix test_top10k test_mit10k test_wordlist test_one_million
 
 # Testcases
 test_mix: mix
@@ -16,8 +21,11 @@ test_mix: mix
 test_top10k: dictionary 
 	./$(OUT)/dictionary $(TESTCASES)/top-10k-googled-words.txt
 
-test_http_routes: dictionary 
-	./$(OUT)/dictionary $(TESTCASES)/http-routes.txt
+test_mit10k: dictionary
+	./$(OUT)/dictionary $(TESTCASES)/mit-1000.txt
+
+test_wordlist: dictionary 
+	./$(OUT)/dictionary $(TESTCASES)/wordlist.txt
 
 test_one_million: dictionary
 	./$(OUT)/dictionary $(TESTCASES)/one-million-words.txt

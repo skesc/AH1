@@ -4,3 +4,5 @@
 # Binaries
 out/
 bin/
+*.so
+
