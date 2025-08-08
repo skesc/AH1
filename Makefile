@@ -12,7 +12,7 @@ repl: $(TEST)/repl.c
 	$(CC) -lAH1 $(CFLAGS) -o $(OUT)/$@ $^
 	@echo "REPL generated in" $(OUT) "folder."
 
-tests: test_mix test_top10k test_mit10k test_wordlist test_million
+tests: test_mix test_top10k test_mit10k test_wordlist test_100k
 
 # Testcases
 test_mix: mix
@@ -27,12 +27,12 @@ test_mit10k: dictionary
 test_wordlist: dictionary 
 	./$(OUT)/dictionary $(TESTCASES)/wordlist.txt
 
-test_million: dictionary
-	./$(OUT)/dictionary $(TESTCASES)/million.txt
+test_100k: dictionary
+	./$(OUT)/dictionary $(TESTCASES)/ignis-100k.txt
 
-# test_one_million: dictionary
-# 	./$(OUT)/dictionary $(TESTCASES)/one-million-words.txt
-
+# Will include when dictionary test is mor optimized
+# test_million: dictionary
+# 	./$(OUT)/dictionary $(TESTCASES)/million.txt
 
 mix: $(TEST)/mix.c
 	mkdir -p $(OUT)/
