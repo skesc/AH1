@@ -2,7 +2,7 @@ CC = cc
 OUT = out
 TEST = tests
 TESTCASES = dictionaries
-CFLAGS = -Wall -Werror -pedantic -O3
+CFLAGS = -Wall -Werror -pedantic -O3 march=native -flto -funroll-loops -fstrict-aliasing -fomit-frame-pointer -fno-exceptions -fno-rtti
 
 all: install
 .PHONY: clean test 
@@ -12,7 +12,7 @@ repl: $(TEST)/repl.c
 	$(CC) -lAH1 $(CFLAGS) -o $(OUT)/$@ $^
 	@echo "REPL generated in" $(OUT) "folder."
 
-tests: test_mix test_top10k test_mit10k test_wordlist # test_one_million
+tests: test_mix test_top10k test_mit10k test_wordlist test_million
 
 # Testcases
 test_mix: mix
@@ -26,6 +26,9 @@ test_mit10k: dictionary
 
 test_wordlist: dictionary 
 	./$(OUT)/dictionary $(TESTCASES)/wordlist.txt
+
+test_million: dictionary
+	./$(OUT)/dictionary $(TESTCASES)/million.txt
 
 # test_one_million: dictionary
 # 	./$(OUT)/dictionary $(TESTCASES)/one-million-words.txt
