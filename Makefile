@@ -2,7 +2,7 @@ CC = cc
 OUT = out
 TEST = tests
 TESTCASES = dictionaries
-CFLAGS = -Wall -Werror -pedantic -O3 march=native -flto -funroll-loops -fstrict-aliasing -fomit-frame-pointer -fno-exceptions -fno-rtti
+CFLAGS = -Wall -Werror -pedantic -O3 march=native -flto -funroll-loops -fstrict-aliasing -fomit-frame-pointer -fno-exceptions
 
 all: install
 .PHONY: clean test 
