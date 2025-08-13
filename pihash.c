@@ -98,9 +98,9 @@ static inline uint32_t fetch8(const char *p)
 
 static inline uint64_t fetch16(const char *p)
 {
-  uint64_t result;
-  memcpy(&result, p, sizeof(uint16_t));
-  return uint64_in_expected_order(result);
+  uint16_t result;
+  memcpy(&result, p, sizeof(result));
+  return uint64_in_expected_order((uint64_t) result);
 }
 
 static inline uint32_t fetch32(const char *p)
@@ -199,10 +199,10 @@ uint32_t piHash32(const char *restrict bytes, size_t size)
    */
   const size_t chunks = (size - 1) & ~(size_t) 3;
   for (size_t i = 0; i < chunks; i+=4) {
-    w ^= (RROTATE32(fetch8(bytes),   11) + i * w) * 0x21914047UL;
-    x += (LROTATE32(fetch8(bytes+1), 17) + w * x) * 0x0356ac85UL;
-    y += (RROTATE32(fetch8(bytes+2),  3) + x * y) * 0x0f7527d9UL;
-    z ^= (RROTATE32(fetch8(bytes+3), 23) + y * z) * 0x1b873593UL;
+    w ^= RROTATE32(fetch8(bytes),   11) * 0x21914047UL + i ^ w;
+    x += LROTATE32(fetch8(bytes+1), 17) * 0x0356ac85UL + w ^ x;
+    y += RROTATE32(fetch8(bytes+2),  3) * 0x0f7527d9UL + x ^ y;
+    z ^= RROTATE32(fetch8(bytes+3), 23) * 0x1b873593UL + y ^ z;
     PIHASH_PERMUTE32(x, y, z);
   }
 
@@ -214,21 +214,22 @@ uint32_t piHash32(const char *restrict bytes, size_t size)
   else
     memcpy(tail, bytes + size - (sizeof tail), (sizeof tail));
 
-  w ^= (RROTATE32(fetch8(tail),   11) + size * w) * 0x21914047UL;
-  x += (LROTATE32(fetch8(tail+1), 17) +    w * x) * 0x0356ac85UL;
-  y += (RROTATE32(fetch8(tail+2),  3) +    x * y) * 0x0f7527d9UL;
-  z ^= (RROTATE32(fetch8(tail+3), 23) +    y * z) * 0x1b873593UL;
+  w ^= RROTATE32(fetch8(tail),   11) * 0x1b873593UL + size;
+  x += LROTATE32(fetch8(tail+1), 17) * 0x0f7527d9UL +    w;
+  y += RROTATE32(fetch8(tail+2),  3) * 0x0356ac85UL +    x;
+  z ^= RROTATE32(fetch8(tail+3), 23) * 0x21914047UL +    y;
+
   PIHASH_PERMUTE32(x, y, z);
 
   w += x; w -= y; w ^= z;
   x -= w;
   y ^= w;
-  
   z += w;
-  w += mix32(w);
-  x += mix32(x) + w;
-  y += mix32(y) + x;
-  z += mix32(z) + y;
+
+  w += mix32(w + size);
+  x += mix32(x +    w);
+  y += mix32(y +    x);
+  z += mix32(z +    y);
 
   return w ^ x ^ y ^ z;
 
@@ -271,10 +272,10 @@ uint64_t piHash64(const char *restrict bytes, size_t size)
   else
     memcpy(tail, bytes + size - (sizeof tail), (sizeof tail));
 
-  w ^= RROTATE64(fetch16(tail),   61) * 0x21914047ULL;
-  x += LROTATE64(fetch16(tail+2), 16) * 0x0356ac85ULL;
-  y += RROTATE64(fetch16(tail+4), 13) * 0x0f7527d9ULL;
-  z ^= RROTATE64(fetch16(tail+6), 19) * 0x1b873593ULL;
+  w ^= RROTATE64(fetch16(tail),   61) * 0x21914047ULL + size;
+  x += LROTATE64(fetch16(tail+2), 16) * 0x0356ac85ULL +    w;
+  y += RROTATE64(fetch16(tail+4), 13) * 0x0f7527d9ULL +    x;
+  z ^= RROTATE64(fetch16(tail+6), 19) * 0x1b873593ULL +    y;
   PIHASH_PERMUTE64(x, y, z);
 
   w += x; w -= y; w ^= z;
@@ -282,10 +283,10 @@ uint64_t piHash64(const char *restrict bytes, size_t size)
   y ^= w;
   z += w;
   
-  w += mix64(w);
-  x += mix64(x) + w;
-  y += mix64(y) + x;
-  z += mix64(z) + y;
+  w += mix64(w + size);
+  x += mix64(x +    w);
+  y += mix64(y +    x);
+  z += mix64(z +    y);
 
   return w ^ x ^ y ^ z;
 
@@ -323,10 +324,10 @@ void piHash128(const char *restrict bytes, size_t size, uint32_t hash[4])
   else
     memcpy(tail, bytes + size - (sizeof tail), (sizeof tail));
 
-  w ^= RROTATE32(fetch32(tail),     7) * 0x0356ac85UL;
-  x += LROTATE32(fetch32(tail+4),  19) * 0x0f7527d9UL;
-  y += RROTATE32(fetch32(tail+8),  13) * 0x1b873593UL;
-  z ^= RROTATE32(fetch32(tail+12), 11) * 0x21914047UL;
+  w ^= RROTATE32(fetch32(tail),     7) * 0x0356ac85UL + size;
+  x += LROTATE32(fetch32(tail+4),  19) * 0x0f7527d9UL +    w;
+  y += RROTATE32(fetch32(tail+8),  13) * 0x1b873593UL +    y;
+  z ^= RROTATE32(fetch32(tail+12), 11) * 0x21914047UL +    z;
 
   PIHASH_PERMUTE32(x, y, z);
 
@@ -335,10 +336,10 @@ void piHash128(const char *restrict bytes, size_t size, uint32_t hash[4])
   y ^= w;
   z += w;
 
-  w = mix32(w) + size;
-  x = mix32(x) +    w;
-  y = mix32(y) +    x;
-  z = mix32(z) +    y;
+  w = mix32(w + size);
+  x = mix32(x +    w);
+  y = mix32(y +    x);
+  z = mix32(z +    y);
 
   hash[0] = w;
   hash[1] = x;
