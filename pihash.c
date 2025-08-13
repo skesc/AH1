@@ -75,6 +75,20 @@
 #define uint64_in_expected_order(x) (x)
 #endif
 
+#define PIHASH_PERMUTE8(a, b, c) do { \
+  uint8_t tmp = a; \
+  a = b; \
+  b = c; \
+  c = tmp; \
+} while (0)
+
+#define PIHASH_PERMUTE16(a, b, c) do { \
+  uint16_t tmp = a; \
+  a = b; \
+  b = c; \
+  c = tmp; \
+} while (0)
+
 #define PIHASH_PERMUTE32(a, b, c) do { \
     uint32_t tmp = a; \
     a = b; \
@@ -89,20 +103,21 @@
     c = tmp; \
 } while (0)
 
-static inline uint32_t fetch8(const char *p)
+/*
+static inline uint8_t fetch8(const char *p)
 {
-  char result;
+  uint8_t result;
   memcpy(&result, p, sizeof(result));
-  return (uint32_t) result;
+  return result;
 }
 
-static inline uint64_t fetch16(const char *p)
+static inline uint16_t fetch16(const char *p)
 {
   uint16_t result;
   memcpy(&result, p, sizeof(result));
-  return uint64_in_expected_order((uint64_t) result);
+  return result;
 }
-
+*/
 static inline uint32_t fetch32(const char *p)
 {
   uint32_t result;
@@ -117,19 +132,74 @@ static inline uint32_t fetch32(const char *p)
 //   return uint64_in_expected_order(result);
 // }
 
+// static inline uint64_t fetch64(const char *p)
+// {
+//   uint64_t result;
+//   memcpy(&result, p, sizeof(result));
+//   return uint64_in_expected_order(result);
+// }
+
 #if defined(__clang__)
+#define LROTATE8(n, s) (__builtin_rotateleft8(n, s))
+#define RROTATE8(n, s) (__builtin_rotateright8(n, s))
+
+#define LROTATE16(n, s) (__builtin_rotateleft16(n, s))
+#define RROTATE16(n, s) (__builtin_rotateright16(n, s))
+
 #define LROTATE32(n, s) (__builtin_rotateleft32(n, s))
 #define RROTATE32(n, s) (__builtin_rotateright32(n, s))
 
 #define LROTATE64(n, s) (__builtin_rotateleft64(n, s))
 #define RROTATE64(n, s) (__builtin_rotateright64(n, s))
 #else
+#define LROTATE8(n, s) (((n) << (s)) | ((n) >> (8 - (s))))
+#define RROTATE8(n, s) (((n) >> (s)) | ((n) << (8 - (s))))
+
+#define LROTATE16(n, s) (((n) << (s)) | ((n) >> (16 - (s))))
+#define RROTATE16(n, s) (((n) >> (s)) | ((n) << (16 - (s))))
+
 #define LROTATE32(n, s) (((n) << (s)) | ((n) >> (32 - (s))))
 #define RROTATE32(n, s) (((n) >> (s)) | ((n) << (32 - (s))))
 
 #define LROTATE64(n, s) (((n) << (s)) | ((n) >> (64 - (s))))
 #define RROTATE64(n, s) (((n) >> (s)) | ((n) << (64 - (s))))
 #endif
+
+/* to debug mix function via test_mix.c */
+#ifdef __AH1_DEBUG__
+uint8_t mix8(uint8_t num)
+#else
+static inline uint8_t mix8(uint8_t num)
+#endif /* __AH1_DEBUG__ */
+{
+
+  /* Inspired by Murmur3, fixed for 64-bit operations */
+  num *= 0x2c;
+  num ^= LROTATE8(num, 3);
+  num ^= 0x31 * (num >> 2) + 0x11;
+  num *= RROTATE8(num, 4);
+  num ^= (0x23 * num) << 7;
+
+  return num;
+}
+
+/* to debug mix function via test_mix.c */
+#ifdef __AH1_DEBUG__
+uint16_t mix16(uint16_t num)
+#else
+static inline uint16_t mix16(uint16_t num)
+#endif /* __AH1_DEBUG__ */
+{
+
+  /* Inspired by Murmur3, fixed for 64-bit operations */
+  num *= 0x2ca803;
+  num ^= LROTATE16(num, 11);
+  num ^= 0x3583c1 * (num >> 7) + 0x34504d;
+  num *= RROTATE16(num,  8);
+  num ^= (0x243e42 * num) << 7;
+
+  return num;
+}
 
 /* to debug mix function via test_mix.c */
 #ifdef __AH1_DEBUG__
@@ -149,32 +219,32 @@ static inline uint32_t mix32(uint32_t num)
   return num;
 }
 
-/* to debug mix function via test_mix.c */
-#ifdef __AH1_DEBUG__
-uint64_t mix64(uint64_t num)
-#else
-static inline uint64_t mix64(uint64_t num)
-#endif /* __AH1_DEBUG__ */
-{
-
-#define c_psi64     0x28330d1b28330d1bULL
-#define c_phi64     0x483b86d5483b86d5ULL
-#define c_L_CONST64 0x3af1de9b3af1de9bULL
-#define c_R_CONST64 0x13a7ce5913a7ce59ULL
-
-  /* Inspired by Murmur3, fixed for 64-bit operations */
-  num *= c_phi64;
-  num ^= LROTATE64(num, 31);
-  num ^= c_L_CONST64 * (num >> 27) + c_psi64;
-  num *= RROTATE64(num,  33);
-  num ^= (c_R_CONST64 * num) << 37;
-
-#undef c_psi64
-#undef c_phi64
-#undef c_L_CONST64
-#undef c_R_CONST64
-  return num;
-}
+// /* to debug mix function via test_mix.c */
+// #ifdef __AH1_DEBUG__
+// uint64_t mix64(uint64_t num)
+// #else
+// static inline uint64_t mix64(uint64_t num)
+// #endif /* __AH1_DEBUG__ */
+// {
+//
+// #define c_psi64     0x28330d1b28330d1bULL
+// #define c_phi64     0x483b86d5483b86d5ULL
+// #define c_L_CONST64 0x3af1de9b3af1de9bULL
+// #define c_R_CONST64 0x13a7ce5913a7ce59ULL
+//
+//   /* Inspired by Murmur3, fixed for 64-bit operations */
+//   num *= c_phi64;
+//   num ^= LROTATE64(num, 31);
+//   num ^= c_L_CONST64 * (num >> 27) + c_psi64;
+//   num *= RROTATE64(num,  33);
+//   num ^= (c_R_CONST64 * num) << 37;
+//
+// #undef c_psi64
+// #undef c_phi64
+// #undef c_L_CONST64
+// #undef c_R_CONST64
+//   return num;
+// }
 
 /*
  * Returns a 32-bit hash for `bytes' of given `size'.
@@ -186,53 +256,55 @@ static inline uint64_t mix64(uint64_t num)
  */
 uint32_t piHash32(const char *restrict bytes, size_t size)
 {
-  /* seed values */
-  uint32_t w = 0x297bfef9UL;
-  uint32_t x = 0x0c240623UL;
-  uint32_t y = 0x39527119UL;
-  uint32_t z = 0x09bc0863UL;
-
   /*
-   * There are four registers, each of which combine to make the final
-   * 32-bit (4 byte) hash. So, each register processes a 1-byte value.
-   * Hence, we read in 4-byte blocks.
+   * Use a 128-bit internal state and fold it down. This is essentially
+   * a truncated version of piHash128, which has good mixing properties.
    */
-  const size_t chunks = (size - 1) & ~(size_t) 3;
-  for (size_t i = 0; i < chunks; i+=4) {
-    w ^= RROTATE32(fetch8(bytes),   11) * 0x21914047UL + i ^ w;
-    x += LROTATE32(fetch8(bytes+1), 17) * 0x0356ac85UL + w ^ x;
-    y += RROTATE32(fetch8(bytes+2),  3) * 0x0f7527d9UL + x ^ y;
-    z ^= RROTATE32(fetch8(bytes+3), 23) * 0x1b873593UL + y ^ z;
-    PIHASH_PERMUTE32(x, y, z);
-  }
+  uint32_t w = 0x5a44f074UL;
+  uint32_t x = 0x35e820f6UL;
+  uint32_t y = 0x674f1845UL;
+  uint32_t z = 0x7fb5de7fUL;
 
-  /* hash the terminating 4 bytes */
-  char tail[4] = { 0 };
+  /* Process in 16-byte chunks */
+  char tail[16] = { 0 };
 
-  if (size < 4)
+  if (size < 16)
     memcpy(tail, bytes, size);
   else
     memcpy(tail, bytes + size - (sizeof tail), (sizeof tail));
 
-  w ^= RROTATE32(fetch8(tail),   11) * 0x1b873593UL + size;
-  x += LROTATE32(fetch8(tail+1), 17) * 0x0f7527d9UL +    w;
-  y += RROTATE32(fetch8(tail+2),  3) * 0x0356ac85UL +    x;
-  z ^= RROTATE32(fetch8(tail+3), 23) * 0x21914047UL +    y;
+  w += RROTATE32(fetch32(tail),     7) * 0x0356ac85UL + size;
+  x += LROTATE32(fetch32(tail+4),  19) * 0x0f7527d9UL +    w;
+  y += RROTATE32(fetch32(tail+8),  13) * 0x1b873593UL +    x;
+  z += RROTATE32(fetch32(tail+12), 11) * 0x21914047UL +    y;
 
   PIHASH_PERMUTE32(x, y, z);
+
+  const size_t chunks = (size - 1) & ~(size_t) 15;
+  for (size_t i = 0; i < chunks; i+=16) {
+    w += RROTATE32(fetch32(bytes),     7) * 0x21914047UL + (i ^ w);
+    x += LROTATE32(fetch32(bytes+4),  19) * 0x1b873593UL + (w ^ x);
+    y += RROTATE32(fetch32(bytes+8),  13) * 0x0f7527d9UL + (x ^ y);
+    z += RROTATE32(fetch32(bytes+12), 11) * 0x0356ac85UL + (y ^ z);
+
+    PIHASH_PERMUTE32(x, y, z);
+
+    bytes += 16;
+  }
 
   w += x; w -= y; w ^= z;
   x -= w;
   y ^= w;
   z += w;
 
-  w += mix32(w + size);
-  x += mix32(x +    w);
-  y += mix32(y +    x);
-  z += mix32(z +    y);
+  /* Use the strong 32-bit mixer */
+  w = mix32(w + size);
+  x = mix32(x +    w);
+  y = mix32(y +    x);
+  z = mix32(z +    y);
 
+  /* Fold the 128-bit state down to 32 bits */
   return w ^ x ^ y ^ z;
-
 }
 
 /*
@@ -244,52 +316,55 @@ uint32_t piHash32(const char *restrict bytes, size_t size)
  */
 uint64_t piHash64(const char *restrict bytes, size_t size)
 {
-  /* seed values */
-  uint64_t w = 0x24e76fbdbULL;
-  uint64_t x = 0x251f30fb9ULL;
-  uint64_t y = 0x1218121e1ULL;
-  uint64_t z = 0x19403b6e1ULL;
+  /* Use 32-bit state variables and good, odd constants from piHash128 */
+  uint32_t w = 0x5a44f074UL;
+  uint32_t x = 0x35e820f6UL;
+  uint32_t y = 0x674f1845UL;
+  uint32_t z = 0x7fb5de7fUL;
 
-  /*
-   * There are four registers, each of which combine to make the final
-   * 64-bit (8 byte) hash. So, each register processes a 2-byte value.
-   * Hence, we read in 8-byte blocks.
-   */
-  const size_t chunks = (size - 1) & ~(size_t) 7;
-  for (size_t i = 0; i < chunks; i+=8) {
-    w ^= RROTATE64(fetch16(bytes),   61) * 0x21914047ULL + i ^ w;
-    x += LROTATE64(fetch16(bytes+2), 16) * 0x0356ac85ULL + w ^ x;
-    y += RROTATE64(fetch16(bytes+4), 13) * 0x0f7527d9ULL + x ^ y;
-    z ^= RROTATE64(fetch16(bytes+6), 19) * 0x1b873593ULL + y ^ z;
-    PIHASH_PERMUTE64(x, y, z);
-  }
+  /* Process in 16-byte chunks, same as piHash128 */
+  char tail[16] = { 0 };
 
-  /* hash the terminating 8 bytes */
-  char tail[8] = { 0 };
-
-  if (size < 8)
+  if (size < 16)
     memcpy(tail, bytes, size);
   else
     memcpy(tail, bytes + size - (sizeof tail), (sizeof tail));
 
-  w ^= RROTATE64(fetch16(tail),   61) * 0x21914047ULL + size;
-  x += LROTATE64(fetch16(tail+2), 16) * 0x0356ac85ULL +    w;
-  y += RROTATE64(fetch16(tail+4), 13) * 0x0f7527d9ULL +    x;
-  z ^= RROTATE64(fetch16(tail+6), 19) * 0x1b873593ULL +    y;
-  PIHASH_PERMUTE64(x, y, z);
+  w += RROTATE32(fetch32(tail),     7) * 0x0356ac85UL + size;
+  x += LROTATE32(fetch32(tail+4),  19) * 0x0f7527d9UL +    w;
+  y += RROTATE32(fetch32(tail+8),  13) * 0x1b873593UL +    x;
+  z += RROTATE32(fetch32(tail+12), 11) * 0x21914047UL +    y;
+
+  PIHASH_PERMUTE32(x, y, z);
+
+  const size_t chunks = (size - 1) & ~(size_t) 15;
+  for (size_t i = 0; i < chunks; i+=16) {
+    w += RROTATE32(fetch32(bytes),     7) * 0x21914047UL + (i ^ w);
+    x += LROTATE32(fetch32(bytes+4),  19) * 0x1b873593UL + (w ^ x);
+    y += RROTATE32(fetch32(bytes+8),  13) * 0x0f7527d9UL + (x ^ y);
+    z += RROTATE32(fetch32(bytes+12), 11) * 0x0356ac85UL + (y ^ z);
+
+    PIHASH_PERMUTE32(x, y, z);
+
+    bytes += 16;
+  }
 
   w += x; w -= y; w ^= z;
   x -= w;
   y ^= w;
   z += w;
-  
-  w += mix64(w + size);
-  x += mix64(x +    w);
-  y += mix64(y +    x);
-  z += mix64(z +    y);
 
-  return w ^ x ^ y ^ z;
+  /* Use the strong 32-bit mixer */
+  w = mix32(w + size);
+  x = mix32(x +    w);
+  y = mix32(y +    x);
+  z = mix32(z +    y);
 
+  /* Combine the four 32-bit state vars into two 64-bit values and XOR them */
+  uint64_t part1 = ((uint64_t)w << 32) | x;
+  uint64_t part2 = ((uint64_t)y << 32) | z;
+
+  return part1 ^ part2;
 }
 
 void piHash128(const char *restrict bytes, size_t size, uint32_t hash[4])
@@ -300,22 +375,6 @@ void piHash128(const char *restrict bytes, size_t size, uint32_t hash[4])
   uint32_t y = 0x674f1845UL;
   uint32_t z = 0x7fb5de7fUL;
 
-  /*
-   * There are four registers, each of which combine to make the final
-   * 128-bit (16 byte) hash. So, each register processes a 4-byte value.
-   * Hence, we read in 16-byte blocks.
-   */
-  const size_t chunks = (size - 1) & ~(size_t) 15;
-  for (size_t i = 0; i < chunks; i+=16) {
-
-    w ^= RROTATE32(fetch32(bytes),     7) * 0x21914047UL + (i ^ w);
-    x += LROTATE32(fetch32(bytes+4),  19) * 0x1b873593UL + (w ^ x);
-    y += RROTATE32(fetch32(bytes+8),  13) * 0x0f7527d9UL + (x ^ y);
-    z ^= RROTATE32(fetch32(bytes+12), 11) * 0x0356ac85UL + (y ^ z);
-
-    PIHASH_PERMUTE32(x, y, z);
-  }
-
   /* hash the terminating 16 bytes */
   char tail[16] = { 0 };
 
@@ -324,12 +383,30 @@ void piHash128(const char *restrict bytes, size_t size, uint32_t hash[4])
   else
     memcpy(tail, bytes + size - (sizeof tail), (sizeof tail));
 
-  w ^= RROTATE32(fetch32(tail),     7) * 0x0356ac85UL + size;
+  w += RROTATE32(fetch32(tail),     7) * 0x0356ac85UL + size;
   x += LROTATE32(fetch32(tail+4),  19) * 0x0f7527d9UL +    w;
-  y += RROTATE32(fetch32(tail+8),  13) * 0x1b873593UL +    y;
-  z ^= RROTATE32(fetch32(tail+12), 11) * 0x21914047UL +    z;
+  y += RROTATE32(fetch32(tail+8),  13) * 0x1b873593UL +    x;
+  z += RROTATE32(fetch32(tail+12), 11) * 0x21914047UL +    y;
 
   PIHASH_PERMUTE32(x, y, z);
+  
+  /*
+   * There are four registers, each of which combine to make the final
+   * 128-bit (16 byte) hash. So, each register processes a 4-byte value.
+   * Hence, we read in 16-byte blocks.
+   */
+  const size_t chunks = (size - 1) & ~(size_t) 15;
+  for (size_t i = 0; i < chunks; i+=16) {
+
+    w += RROTATE32(fetch32(bytes),     7) * 0x21914047UL + (i ^ w);
+    x += LROTATE32(fetch32(bytes+4),  19) * 0x1b873593UL + (w ^ x);
+    y += RROTATE32(fetch32(bytes+8),  13) * 0x0f7527d9UL + (x ^ y);
+    z += RROTATE32(fetch32(bytes+12), 11) * 0x0356ac85UL + (y ^ z);
+
+    PIHASH_PERMUTE32(x, y, z);
+
+    bytes += 16;
+  }
 
   w += x; w -= y; w ^= z;
   x -= w;

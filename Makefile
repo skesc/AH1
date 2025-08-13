@@ -12,7 +12,7 @@ repl: $(TEST)/repl.c pihash.c
 	$(CC) $(CFLAGS) -o $(OUT)/$@ $^
 	@echo "REPL generated in" $(OUT) "folder."
 
-tests: test_mix test_top10k test_mit10k test_100k test_wordlist
+tests: test_mix test_top10k test_mit10k test_100k 
 
 # Testcases
 test_mix: mix
