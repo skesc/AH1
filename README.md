@@ -31,4 +31,3 @@ usage, see [`repl.c`](tests/repl.c) and [`digest.c`](tests/digest.c).
 The MIT License (MIT)
 
 Copyright (c) 2025 Abhigyan <nourr@duck.com>
-

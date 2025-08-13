@@ -24,7 +24,7 @@
  * THE SOFTWARE.
  */
 
-#include <AH1.h>
+#include "../pihash.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -45,29 +45,18 @@ void ah1_print(uint32_t hash[4])
   printf("\n");
 }
 
-void ah2_print(uint64_t hash[4])
-{
-  printf("ah256: ");
-  for (int i = 0; i < 4; ++i) {
-    printf("%" PRIx64, hash[i]);
-  }
-  printf("\n");
-}
-
 int main(int argc, char **argv)
 {
-  uint32_t hash32[4];
-  uint64_t hash64[4];
+  uint32_t hash128[4];
   char buff[BUFF_SIZE] = { 0 };
 
   printf(">> ");
   while (fgets(buff, BUFF_SIZE, stdin)) {
-
-    AH1Hash(buff, strlen(buff), hash32);
-    AH2Hash(buff, strlen(buff), hash64);
-
-    ah1_print(hash32);
-    ah2_print(hash64);
+    size_t buff_len = strlen(buff) - 1;
+    printf("314hash32:  %" PRIx32 "\n", piHash32(buff, buff_len));
+    printf("314hash64:  %" PRIx64 "\n", piHash64(buff, buff_len));
+    piHash128(buff, buff_len, hash128);
+    ah1_print(hash128);
     printf(">> ");
   }
 

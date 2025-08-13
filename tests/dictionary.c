@@ -26,8 +26,9 @@
  * THE SOFTWARE.
  */
 
-#include <AH1.h>
+#include "../pihash.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,22 +42,14 @@
 typedef struct TestWord
 {
   char *word;
+  uint64_t hash64;
   uint32_t hash128[4];
-  uint64_t hash256[4];
 } TestWord;
 
 void ah1_print(uint32_t hash[4])
 {
   for (uint8_t i = 0; i < 4; ++i) {
     printf("%" PRIx32, hash[i]);
-  }
-  printf("\n");
-}
-
-void ah2_print(uint64_t hash[4])
-{
-  for (int i = 0; i < 4; ++i) {
-    printf("%" PRIx64, hash[i]);
   }
   printf("\n");
 }
@@ -116,10 +109,13 @@ int main(int argc, char **argv)
   unsigned int collisions = 0;
   for (unsigned int i = 0; i < lines; ++i) {
     test->word = get_word(wordlist);
-    AH1Hash(test->word, strlen(test->word) - 1, test->hash128);
-    AH2Hash(test->word, strlen(test->word) - 1, test->hash256);
+    unsigned long word_len = strlen(test->word) - 1;
+
+    test->hash64 = piHash64(test->word, word_len);
+    piHash128(test->word, word_len, test->hash128);
+
+    uint64_t h64_1 = test->hash64;
     uint32_t *h128_1 = test->hash128;
-    uint64_t *h256_1 = test->hash256;
 
 /*
 #ifdef __AH1_DEBUG__
@@ -131,11 +127,12 @@ int main(int argc, char **argv)
 */
     TestWord *match = tests;
     for (int j = 0; j < i; ++j) {
-      AH1Hash(match->word, strlen(match->word) - 1, match->hash128);
-      AH2Hash(match->word, strlen(match->word) - 1, match->hash256);
+      unsigned long match_len = strlen(match->word) - 1;
+      match->hash64 = piHash64(match->word, match_len);
+      piHash128(match->word, match_len, match->hash128);
 
+      uint64_t h64_2 = match->hash64;
       uint32_t *h128_2 = match->hash128;
-      uint64_t *h256_2 = match->hash256;
 
 /*
 #ifdef __AH1_DEBUG__
@@ -144,6 +141,15 @@ int main(int argc, char **argv)
       ah1_print(match->hash);
 #endif
 */
+
+      if (h64_1 == h64_2) {
+        printf("[%s] MATCH FOUND FOR 64-BIT HASH\n", argv[1]);
+        printf("  %s", test->word);
+        printf("hash64: %" PRIx64 "\n", h64_1);
+        printf("  %s", match->word);
+        printf("hash64: %" PRIx64 "\n", h64_2);
+        collisions++;
+      }
 
       bool collides = ((h128_1[0] == h128_2[0]) && (h128_1[1] == h128_2[1]) && (h128_1[2] == h128_2[2]) && (h128_1[3] == h128_2[3]));
       if (collides) {
@@ -155,16 +161,6 @@ int main(int argc, char **argv)
         collisions++;
       }
 
-      collides = ((h256_1[0] == h256_2[0]) && (h256_1[1] == h256_2[1]) && (h256_1[2] == h256_2[2]) && (h256_1[3] == h256_2[3]));
-      if (collides) {
-        printf("[%s] MATCH FOUND FOR 256-BIT HASH\n", argv[1]);
-        printf("  %s", test->word);
-        ah2_print(test->hash256);
-        printf("  %s", match->word);
-        ah2_print(match->hash256);
-        collisions++;
-      }
-
       match++;
     }
     
@@ -173,7 +169,7 @@ int main(int argc, char **argv)
   }
   
   fclose(wordlist);
-  printf("[%s]Total collisions: %u/%u\n", argv[1], collisions, lines);
+  printf("[%s] Total collisions: %u/%u\n", argv[1], collisions, lines);
   assert(!collisions && "TEST FAILED: COLLISION DETECTED.");
   return 0;
 }
