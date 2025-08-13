@@ -12,7 +12,7 @@ repl: $(TEST)/repl.c pihash.c
 	$(CC) $(CFLAGS) -o $(OUT)/$@ $^
 	@echo "REPL generated in" $(OUT) "folder."
 
-tests: test_mix test_top10k test_mit10k test_100k
+tests: test_mix test_top10k test_mit10k test_100k test_wordlist
 
 # Testcases
 test_mix: mix
@@ -26,6 +26,9 @@ test_mit10k: dictionary
 
 test_100k: dictionary
 	./$(OUT)/dictionary $(TESTCASES)/ignis-100k.txt
+
+test_wordlist: dictionary 
+	./$(OUT)/dictionary $(TESTCASES)/wordlist.txt
 
 # Will include when dictionary test is mor optimized
 # test_million: dictionary

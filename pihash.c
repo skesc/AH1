@@ -98,9 +98,9 @@ static inline uint32_t fetch8(const char *p)
 
 static inline uint64_t fetch16(const char *p)
 {
-  uint16_t result;
-  memcpy(&result, p, sizeof(result));
-  return uint64_in_expected_order((uint64_t) result);
+  uint64_t result;
+  memcpy(&result, p, sizeof(uint16_t));
+  return uint64_in_expected_order(result);
 }
 
 static inline uint32_t fetch32(const char *p)
@@ -256,10 +256,10 @@ uint64_t piHash64(const char *restrict bytes, size_t size)
    */
   const size_t chunks = (size - 1) & ~(size_t) 7;
   for (size_t i = 0; i < chunks; i+=8) {
-    w ^= (RROTATE64(fetch16(bytes),   61) + i * w) * 0x21914047ULL;
-    x += (LROTATE64(fetch16(bytes+2), 16) + w * x) * 0x0356ac85ULL;
-    y += (RROTATE64(fetch16(bytes+4), 13) + x * y) * 0x0f7527d9ULL;
-    z ^= (RROTATE64(fetch16(bytes+6), 19) + y * z) * 0x1b873593ULL;
+    w ^= RROTATE64(fetch16(bytes),   61) * 0x21914047ULL + i ^ w;
+    x += LROTATE64(fetch16(bytes+2), 16) * 0x0356ac85ULL + w ^ x;
+    y += RROTATE64(fetch16(bytes+4), 13) * 0x0f7527d9ULL + x ^ y;
+    z ^= RROTATE64(fetch16(bytes+6), 19) * 0x1b873593ULL + y ^ z;
     PIHASH_PERMUTE64(x, y, z);
   }
 
@@ -271,10 +271,10 @@ uint64_t piHash64(const char *restrict bytes, size_t size)
   else
     memcpy(tail, bytes + size - (sizeof tail), (sizeof tail));
 
-  w ^= (RROTATE64(fetch16(tail),   61) + size * w) * 0x21914047ULL;
-  x += (LROTATE64(fetch16(tail+2), 16) +    w * x) * 0x0356ac85ULL;
-  y += (RROTATE64(fetch16(tail+4), 13) +    x * y) * 0x0f7527d9ULL;
-  z ^= (RROTATE64(fetch16(tail+6), 19) +    y * z) * 0x1b873593ULL;
+  w ^= RROTATE64(fetch16(tail),   61) * 0x21914047ULL;
+  x += LROTATE64(fetch16(tail+2), 16) * 0x0356ac85ULL;
+  y += RROTATE64(fetch16(tail+4), 13) * 0x0f7527d9ULL;
+  z ^= RROTATE64(fetch16(tail+6), 19) * 0x1b873593ULL;
   PIHASH_PERMUTE64(x, y, z);
 
   w += x; w -= y; w ^= z;

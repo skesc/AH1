@@ -106,7 +106,8 @@ int main(int argc, char **argv)
   }
 
   TestWord *test  = tests;
-  unsigned int collisions = 0;
+  unsigned int collisions64 = 0;
+  unsigned int collisions128 = 0;
   for (unsigned int i = 0; i < lines; ++i) {
     test->word = get_word(wordlist);
     unsigned long word_len = strlen(test->word) - 1;
@@ -148,7 +149,7 @@ int main(int argc, char **argv)
         printf("hash64: %" PRIx64 "\n", h64_1);
         printf("  %s", match->word);
         printf("hash64: %" PRIx64 "\n", h64_2);
-        collisions++;
+        collisions64++;
       }
 
       bool collides = ((h128_1[0] == h128_2[0]) && (h128_1[1] == h128_2[1]) && (h128_1[2] == h128_2[2]) && (h128_1[3] == h128_2[3]));
@@ -158,7 +159,7 @@ int main(int argc, char **argv)
         ah1_print(test->hash128);
         printf("  %s", match->word);
         ah1_print(match->hash128);
-        collisions++;
+        collisions128++;
       }
 
       match++;
@@ -169,8 +170,8 @@ int main(int argc, char **argv)
   }
   
   fclose(wordlist);
-  printf("[%s] Total collisions: %u/%u\n", argv[1], collisions, lines);
-  assert(!collisions && "TEST FAILED: COLLISION DETECTED.");
-  return 0;
+  printf("[%s] Total  64-bit collisions: %u/%u\n", argv[1], collisions64, lines);
+  printf("[%s] Total 128-bit collisions: %u/%u\n", argv[1], collisions128, lines);
+  return (collisions64 + collisions128 ? 1 : 0);
 }
 
