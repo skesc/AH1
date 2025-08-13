@@ -199,10 +199,10 @@ uint32_t piHash32(const char *restrict bytes, size_t size)
    */
   const size_t chunks = (size - 1) & ~(size_t) 3;
   for (size_t i = 0; i < chunks; i+=4) {
-    w ^= (RROTATE32(fetch8(bytes),   16) + i * w) * 0x21914047UL;
-    x += (LROTATE32(fetch8(bytes+1),  8) + w * x) * 0x0356ac85UL;
-    y += (RROTATE32(fetch8(bytes+2),  4) + x * y) * 0x0f7527d9UL;
-    z ^= (RROTATE32(fetch8(bytes+3),  2) + y * z) * 0x1b873593UL;
+    w ^= (RROTATE32(fetch8(bytes),   11) + i * w) * 0x21914047UL;
+    x += (LROTATE32(fetch8(bytes+1), 17) + w * x) * 0x0356ac85UL;
+    y += (RROTATE32(fetch8(bytes+2),  3) + x * y) * 0x0f7527d9UL;
+    z ^= (RROTATE32(fetch8(bytes+3), 23) + y * z) * 0x1b873593UL;
     PIHASH_PERMUTE32(x, y, z);
   }
 
@@ -214,10 +214,10 @@ uint32_t piHash32(const char *restrict bytes, size_t size)
   else
     memcpy(tail, bytes + size - (sizeof tail), (sizeof tail));
 
-  w ^= (RROTATE32(fetch8(tail),   16) + size * w) * 0x21914047UL;
-  x += (LROTATE32(fetch8(tail+1),  8) +    w * x) * 0x0356ac85UL;
-  y += (RROTATE32(fetch8(tail+2),  4) +    x * y) * 0x0f7527d9UL;
-  z ^= (RROTATE32(fetch8(tail+3),  2) +    y * z) * 0x1b873593UL;
+  w ^= (RROTATE32(fetch8(tail),   11) + size * w) * 0x21914047UL;
+  x += (LROTATE32(fetch8(tail+1), 17) +    w * x) * 0x0356ac85UL;
+  y += (RROTATE32(fetch8(tail+2),  3) +    x * y) * 0x0f7527d9UL;
+  z ^= (RROTATE32(fetch8(tail+3), 23) +    y * z) * 0x1b873593UL;
   PIHASH_PERMUTE32(x, y, z);
 
   w += x; w -= y; w ^= z;
@@ -256,10 +256,10 @@ uint64_t piHash64(const char *restrict bytes, size_t size)
    */
   const size_t chunks = (size - 1) & ~(size_t) 7;
   for (size_t i = 0; i < chunks; i+=8) {
-    w ^= (RROTATE64(fetch16(bytes),   32) + i * w) * 0x21914047ULL;
+    w ^= (RROTATE64(fetch16(bytes),   61) + i * w) * 0x21914047ULL;
     x += (LROTATE64(fetch16(bytes+2), 16) + w * x) * 0x0356ac85ULL;
-    y += (RROTATE64(fetch16(bytes+4),  8) + x * y) * 0x0f7527d9ULL;
-    z ^= (RROTATE64(fetch16(bytes+6),  4) + y * z) * 0x1b873593ULL;
+    y += (RROTATE64(fetch16(bytes+4), 13) + x * y) * 0x0f7527d9ULL;
+    z ^= (RROTATE64(fetch16(bytes+6), 19) + y * z) * 0x1b873593ULL;
     PIHASH_PERMUTE64(x, y, z);
   }
 
@@ -271,10 +271,10 @@ uint64_t piHash64(const char *restrict bytes, size_t size)
   else
     memcpy(tail, bytes + size - (sizeof tail), (sizeof tail));
 
-  w ^= (RROTATE64(fetch16(tail),   32) + size * w) * 0x21914047ULL;
+  w ^= (RROTATE64(fetch16(tail),   61) + size * w) * 0x21914047ULL;
   x += (LROTATE64(fetch16(tail+2), 16) +    w * x) * 0x0356ac85ULL;
-  y += (RROTATE64(fetch16(tail+4),  8) +    x * y) * 0x0f7527d9ULL;
-  z ^= (RROTATE64(fetch16(tail+6),  4) +    y * z) * 0x1b873593ULL;
+  y += (RROTATE64(fetch16(tail+4), 13) +    x * y) * 0x0f7527d9ULL;
+  z ^= (RROTATE64(fetch16(tail+6), 19) +    y * z) * 0x1b873593ULL;
   PIHASH_PERMUTE64(x, y, z);
 
   w += x; w -= y; w ^= z;
@@ -294,10 +294,10 @@ uint64_t piHash64(const char *restrict bytes, size_t size)
 void piHash128(const char *restrict bytes, size_t size, uint32_t hash[4])
 {
   /* seed values */
-  uint32_t w = 0x21914047UL;
-  uint32_t x = 0x1b873593UL;
-  uint32_t y = 0x0356ac85UL;
-  uint32_t z = 0x0f7527d9UL;
+  uint32_t w = 0x5a44f074UL;
+  uint32_t x = 0x35e820f6UL;
+  uint32_t y = 0x674f1845UL;
+  uint32_t z = 0x7fb5de7fUL;
 
   /*
    * There are four registers, each of which combine to make the final
@@ -306,10 +306,12 @@ void piHash128(const char *restrict bytes, size_t size, uint32_t hash[4])
    */
   const size_t chunks = (size - 1) & ~(size_t) 15;
   for (size_t i = 0; i < chunks; i+=16) {
-    w ^= RROTATE32(fetch32(bytes),   16) * 0x5a44f074UL + size;
-    x += LROTATE32(fetch32(bytes+4),  8) * 0x35e820f6UL + w;
-    y += RROTATE32(fetch32(bytes+8),  4) * 0x674f1845UL + x;
-    z ^= RROTATE32(fetch32(bytes+12), 2) * 0x7fb5de7fUL + y;
+
+    w ^= RROTATE32(fetch32(bytes),     7) * 0x21914047UL + (i ^ w);
+    x += LROTATE32(fetch32(bytes+4),  19) * 0x1b873593UL + (w ^ x);
+    y += RROTATE32(fetch32(bytes+8),  13) * 0x0f7527d9UL + (x ^ y);
+    z ^= RROTATE32(fetch32(bytes+12), 11) * 0x0356ac85UL + (y ^ z);
+
     PIHASH_PERMUTE32(x, y, z);
   }
 
@@ -321,10 +323,11 @@ void piHash128(const char *restrict bytes, size_t size, uint32_t hash[4])
   else
     memcpy(tail, bytes + size - (sizeof tail), (sizeof tail));
 
-  w ^= RROTATE32(fetch32(tail),   16) * 0x7fb5de7fUL + size;
-  x += LROTATE32(fetch32(tail+4),  8) * 0x674f1845UL + w;
-  y += RROTATE32(fetch32(tail+8),  4) * 0x35e820f6UL + x;
-  z ^= RROTATE32(fetch32(tail+12), 2) * 0x5a44f074UL + y;
+  w ^= RROTATE32(fetch32(tail),     7) * 0x0356ac85UL;
+  x += LROTATE32(fetch32(tail+4),  19) * 0x0f7527d9UL;
+  y += RROTATE32(fetch32(tail+8),  13) * 0x1b873593UL;
+  z ^= RROTATE32(fetch32(tail+12), 11) * 0x21914047UL;
+
   PIHASH_PERMUTE32(x, y, z);
 
   w += x; w -= y; w ^= z;
@@ -332,10 +335,10 @@ void piHash128(const char *restrict bytes, size_t size, uint32_t hash[4])
   y ^= w;
   z += w;
 
-  w = mix32(w);
-  x = mix32(x) + w;
-  y = mix32(y) + x;
-  z = mix32(z) + y;
+  w = mix32(w) + size;
+  x = mix32(x) +    w;
+  y = mix32(y) +    x;
+  z = mix32(z) +    y;
 
   hash[0] = w;
   hash[1] = x;
